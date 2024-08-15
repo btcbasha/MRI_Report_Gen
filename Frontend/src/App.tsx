@@ -1,7 +1,7 @@
 import './App.css'
 import Navbar from './Navbar'
 import MedicalNoteTranslator from './Uploade'
-import Footer from './Footer'
+// import Footer from './Footer'
 function App() {
  
 
@@ -9,7 +9,6 @@ function App() {
     <>
     <Navbar/>
     <MedicalNoteTranslator/>
-    <Footer/>
     </>
   )
 }
