@@ -9,8 +9,8 @@ const Navbar =() => {
             </div>
             <div className="container mx-auto flex justify-between items-center p-4">
                 <div className="flex items-center space-x-4">
-                    <a href="#" className="text-blue-700 text-2xl font-bold">
-                        vital
+                    <a href="/" className="text-blue-700 text-2xl font-bold">
+                    ekonik health
                     </a>
                     <div className="hidden md:flex space-x-8">
                         <div className="relative group">

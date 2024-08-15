@@ -1,16 +1,9 @@
 
 const Footer= () => {
     return (
-        <footer className="bg-white py-10 mt-[25rem]">
+        <footer className="bg-white py-10 mt-[10rem] lg:mt-[35rem]">
             <div className="container mx-auto  px-16">
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5  gap-8 text-center md:text-left">
-                    <div>
-                        <h4 className="text-4xl font-bold text-blue-700">vital</h4>
-                        <div className="mt-4">
-                            <img src="https://vital.io/_next/image?url=%2Fimg%2Fsecurity%2Fhitrust-r2.png&w=96&q=75" alt="HITRUST Certified" className="mx-auto md:mx-0" />
-                            <img src="https://vital.io/_next/image?url=%2Fimg%2Fsecurity%2Faicpa-soc.png&w=96&q=75" alt="AICPA SOC" className="mt-4 mx-auto md:mx-0" />
-                        </div>
-                    </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4  gap-24 text-center md:text-left">
                     <div>
                         <h4 className="text-xl font-bold text-blue-700">Technology</h4>
                         <ul className="mt-4 space-y-2">
@@ -50,7 +43,7 @@ const Footer= () => {
                     </div>
                 </div>
                 <div className="mt-8 text-center text-gray-500">
-                    © Vital 2024
+                    © ekonik health 2024
                 </div>
             </div>
         </footer>
