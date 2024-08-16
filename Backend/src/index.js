@@ -1,6 +1,5 @@
 const express = require('express');
 const multer = require('multer');
-const fs = require('fs');
 const pdfParse = require('pdf-parse');
 const { OpenAI } = require('openai');
 const dotenv = require('dotenv');
@@ -18,6 +17,7 @@ if (!apiKey) {
 
 const openai = new OpenAI({ apiKey });
 
+// Function to handle OpenAI Chat completions
 async function chat(message, prompt) {
   try {
     const response = await openai.chat.completions.create({
@@ -35,6 +35,7 @@ async function chat(message, prompt) {
   }
 }
 
+// Function to create a concise summary of the PDF
 async function createConciseSummary(pdfText) {
   const summaryPrompt = `
     Summarize the following medical report in 1-2 sentences, focusing on the most critical points that need to be visually explained. 
@@ -57,6 +58,7 @@ async function createConciseSummary(pdfText) {
   }
 }
 
+// Function to generate an image and annotate it using DALL-E
 async function generateImageAndAnnotate(textDescription) {
   try {
     // Generate image using DALL-E with a focused description
@@ -76,20 +78,8 @@ async function generateImageAndAnnotate(textDescription) {
   }
 }
 
-async function analyzeReportForImage(pdfText) {
-  const analysisPrompt = `
-    Analyze the following medical report and provide a concise summary focusing on the most important details that could be visualized. 
-    Include key medical terms and specific symptoms or conditions that are most relevant for creating a visual aid. 
-    
-    Medical Report:
-    ${pdfText}
-  `;
-
-  const analysisResult = await chat(analysisPrompt, '');
-  return analysisResult.trim();
-}
-
-const upload = multer({ dest: 'uploads/' });
+// Set up Multer to store files in memory
+const upload = multer({ storage: multer.memoryStorage() });
 
 app.use(bodyParser.json());
 app.use(cors());
@@ -119,10 +109,11 @@ app.post('/chat', upload.single('file'), async (req, res) => {
   }
 
   try {
-    const fileContent = fs.readFileSync(file.path);
-    const parsedPDF = await pdfParse(fileContent);
+    // Parse the PDF file from memory
+    const parsedPDF = await pdfParse(file.buffer);
     const pdfText = parsedPDF.text;
 
+    // Combine the message with the PDF content
     const combinedMessage = `${message}\nFile Content:\n${pdfText}`;
     const response = await chat(combinedMessage, prompt);
 
@@ -139,8 +130,6 @@ app.post('/chat', upload.single('file'), async (req, res) => {
   } catch (error) {
     console.error('Error processing file:', error);
     res.status(500).json({ error: 'Error processing file' });
-  } finally {
-    fs.unlinkSync(file.path);
   }
 });
 

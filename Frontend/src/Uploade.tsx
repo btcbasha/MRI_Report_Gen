@@ -170,8 +170,8 @@ function Uploade() {
           )}
           <h1 className="text-xl border-b-4 pb-2 font-semibold">Translation</h1>
           <div
-            className={`text-black mt-2 flex-grow overflow-y-auto transition-all duration-300 ${
-              hasResponse && !isExpanded ? 'h-[150px]' : 'h-auto'
+            className={`text-black mt-2 flex-grow overflow-y-auto  transition-all duration-300 ${
+              hasResponse && !isExpanded ? 'h-[150px]' : 'h-auto '
             }`}
             dangerouslySetInnerHTML={{ __html: isLoading ? 'Loading...' : formatResponse(isExpanded ? result : getShortResponse(result)) }}
           />
