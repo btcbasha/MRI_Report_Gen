@@ -35,37 +35,41 @@ async function chat(message, prompt) {
   }
 }
 
-// Function to create a concise summary of the PDF
-async function createConciseSummary(pdfText) {
-  const summaryPrompt = `
-    Summarize the following medical report in 1-2 sentences, focusing on the most critical points that need to be visually explained. 
-    
-    Medical Report Summary:
-    ${pdfText}
-  `;
-  
+// Function to summarize text for DALL-E prompt
+async function summarizeText(text) {
   try {
-    const response = await openai.chat.completions.create({
+    const summaryResponse = await openai.chat.completions.create({
       model: 'gpt-4o',
-      messages: [{ role: 'user', content: summaryPrompt }],
-      max_tokens: 100
+      messages: [
+        {
+          role: 'system',
+          content: 'Summarize the following text focusing on the key points relevant for generating an annotated image. I want to use it to create a detailed diagram. The image will clearly show the key areas mentioned in the medical report and use arrows or labels to point out these specific sections. Ensure the image is colorful and visually engaging to help with understanding. Include annotations that are clear and easy to interpret. The image will include annotations that make it easy for a non-medical person to understand the highlighted areas and their significance based on the medical report. Keep the summary under 1000 characters'
+        },
+        {
+          role: 'user',
+          content: text
+        }
+      ],
+      max_tokens: 200
     });
-    
-    return response.choices[0].message.content.trim();
+    return summaryResponse.choices[0].message.content;
   } catch (error) {
-    console.error('Error creating concise summary:', error);
-    return 'No summary available.';
+    console.error('Error summarizing text:', error);
+    return '';
   }
 }
 
 // Function to generate an image and annotate it using DALL-E
 async function generateImageAndAnnotate(textDescription) {
   try {
-    // Generate image using DALL-E with a focused description
+    // Summarize the description if it's too long
+    const summarizedDescription = await summarizeText(textDescription);
+
+    // Generate image using DALL-E with the summarized description
     const imageResponse = await openai.images.generate({
-      prompt: textDescription,
+      prompt: summarizedDescription,
       n: 1,
-      size: '512x512' // Adjust size as needed to fit translation box
+      size: '512x512' // Adjust size as needed
     });
 
     // Get the image URL from the response
@@ -90,12 +94,16 @@ app.get('/', (req, res) => {
 
 app.post('/chat', upload.single('file'), async (req, res) => {
   const prompt = `
-    You are an expert physician with over 1000 years of experience across all medical fields. I am uploading a medical report in PDF format. 
-    Please read and analyze it carefully. Identify and summarize all important points, providing a clear and accurate overview as if you are explaining to an adult person who has not graduated high school. 
-    Your analysis should include any potential issues, noting whether the findings are normal, concerning, or require further investigation.
+    Please summarize the "impression" section of a medical report, such as an MRI, in a way that is simple, memorable, and emotionally engaging for an adult with no medical background. Assume the person has only completed high school education and is unfamiliar with medical terminology. The goal is for them to understand the summary clearly while feeling reassured or empowered about their health.
+
+    Your summary should:
     
-    In addition, use pictures to help explain terms when necessary, such as spinal sections or brain regions, to the patient so they can visualize the location of the problem. Discuss symptoms beyond just pain, like how different conditions might affect various parts of the body. 
-    Provide opportunities to dive deeper into subjects if the patient wishes to learn more. Ensure that your explanation is memorable and emotionally engaging.`;
+    Be Emotionally Supportive: Use kind, empathetic language to provide comfort and hope.
+    Use Relatable Analogies: Compare medical issues to everyday situations to make them easier to understand.
+    Highlight Positive Actions or Next Steps: Offer a sense of control or optimism where appropriate.
+    Be Easy to Remember: Use concise language or storytelling techniques to make the summary memorable.
+    For example, if the report discusses a disc herniation in the spine, you could liken it to a cushion that’s been compressed but assure the patient that it’s a common condition with effective treatments available.
+  `;
 
   const { message } = req.body;
   const file = req.file;
@@ -117,13 +125,13 @@ app.post('/chat', upload.single('file'), async (req, res) => {
     const combinedMessage = `${message}\nFile Content:\n${pdfText}`;
     const response = await chat(combinedMessage, prompt);
 
-    // Create a concise summary of the MRI report
-    const conciseSummary = await createConciseSummary(pdfText);
-
-    let annotatedImage = null;
-    if (conciseSummary !== 'No summary available.') {
-      annotatedImage = await generateImageAndAnnotate(conciseSummary);
-    }
+    // Generate image using DALL-E based on the summarized PDF text
+    const imagePrompt = `
+      Create a detailed and annotated image based on the following description:
+      ${pdfText}
+      Highlight key areas such as specific sections of the spinal cord or other relevant body parts, with arrows pointing to important parts as described in the report.
+    `;
+    const annotatedImage = await generateImageAndAnnotate(imagePrompt);
 
     res.json({ response, image: annotatedImage });
 
@@ -133,33 +141,5 @@ app.post('/chat', upload.single('file'), async (req, res) => {
   }
 });
 
-// New endpoint to fetch additional information
-app.get('/api/additional-info', async (req, res) => {
-  const { topic } = req.query;
-
-  if (!topic) {
-    return res.status(400).json({ error: 'Missing topic query parameter' });
-  }
-
-  try {
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        {
-          role: 'user',
-          content: `Provide detailed information about ${topic} suitable for a patient with no medical background. Include key points, implications, and what the patient should understand about this condition.`
-        }
-      ],
-      max_tokens: 500
-    });
-
-    const info = response.choices[0].message.content;
-    res.json({ info });
-
-  } catch (error) {
-    console.error('Error fetching additional information:', error);
-    res.status(500).json({ error: 'Error fetching additional information' });
-  }
-});
 
 app.listen(3000, () => console.log('Server listening on port 3000'));
